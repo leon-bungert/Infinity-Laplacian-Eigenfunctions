@@ -20,5 +20,6 @@ octave-workspace
 # Simulink autosave extension
 .autosave
 
-# PDFs
+# PDFs and mats
 .pdf
+.mat
