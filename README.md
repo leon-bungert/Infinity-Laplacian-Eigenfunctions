@@ -1,1 +1,1 @@
-# Infinity-Laplacian-eigenfunctions
+# Infinity Laplacian Eigenfunctions
