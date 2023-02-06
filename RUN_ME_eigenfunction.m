@@ -46,15 +46,15 @@ init = 'zero';
 % init = 'distance';
 
 % initialize necessary parameters
-l               = 1;      % concave approximation parameter <= 1
+alpha           = 1;      % concave approximation parameter <= 1
 TOL             = 1*1e-7; 
 max_iterations  = 5000;
 max_broyden     = 0;
 broyden         = 'bad';
-samples         = 1*40;       % has to be even!!!!
+samples         = 1*50;       % has to be even!!!!
 stencil_shape   = 'full';   % valid stencils: full, square
 neighborhood_size = 9;     % at least 3
-save2disk       = false;     % save results to disk
+save2disk       = true;     % save results to disk
 visualize       = true;     % visualize the results
 savingFreq      = 10;       % saving frequency
 visFreq         = 100;       % visualization frequency
@@ -68,6 +68,8 @@ end
 % initialize grid on unit square [-1 1]^2 according to amount of sample
 % points
 step_size = 2 / samples;
+
+
 [x,y] = meshgrid(linspace(-1,1,samples+1));
 
 % define subdomain of the square domain
@@ -138,6 +140,7 @@ lambda = 1/max_dist;
 
 max_idx = find(dist_inner == max_dist);
 
+max_dist_tmp = max_dist;
 max_dist = 1;
 
 center_idx = (length(max_idx)-1)/2+1;
@@ -151,9 +154,9 @@ max_idx = max_idx(center_idx);
 % initialization
 switch init
     case 'random'
-        phi = max_dist * rand(size(distance_function));        
+        phi = rand(size(distance_function));        
     case 'distance'    
-        phi = distance_function;
+        phi = distance_function / max_dist_tmp;
     case 'zero'
         phi = zeros(size(distance_function));
 end
@@ -192,6 +195,9 @@ if save2disk
     foldername = [problem, '_', shape, '_', 'high_ridge_', num2str(high_ridge),...
                  '_norm_', num2str(normalization), '_init_', init,... 
                  '_nbrs_', num2str(neighborhood_size)];
+    if alpha < 1
+        foldername = [foldername, '_alpha_', num2str(alpha)];
+    end
              
     outputfolder = ['results','/',foldername];         
 
@@ -277,7 +283,8 @@ while max(rel_change,scheme_accuracy) > TOL && iteration <= max_iterations
         
         val = pad_u(global_idx);
                         
-        F1 = ( (u - val ) - lambda.*distances.*sign(u).*abs(u).^l  ) ;
+        F1 = ((u - val ) - lambda.*distances.*sign(u).*abs(u).^alpha) ;
+        
 
         scheme = min( F1 , F2);
     else
@@ -367,6 +374,9 @@ if save2disk
 end
 
 if visualize 
+        solution = max_dist_tmp * solution;
+        scheme_exp = max_dist_tmp * scheme_exp;
+
         subplot(1,2,1);
         surf(x,y,solution.*mask_vis); title(['Solution at iteration ',num2str(iteration)]); 
         axis equal;

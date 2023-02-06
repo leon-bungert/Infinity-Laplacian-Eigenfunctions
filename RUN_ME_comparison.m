@@ -1,5 +1,5 @@
-% This code numerically computes the first Eigenfunction of the
-% infinity Laplacian operator on the unit square [-1 1]^2 for given
+% This code numerically computes the first eigenfunction and potential of the
+% infinity Laplacian operator on the unit square [-1 1]^2 for zero
 % boundary conditions.
 % @authors: Farid Bozorgnia, Leon Bungert, Daniel Tenbrinck
 % @date: 17/01/20
