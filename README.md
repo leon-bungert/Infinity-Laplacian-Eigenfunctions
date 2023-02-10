@@ -26,6 +26,8 @@ $$
 \end{align*}
 $$
 
-The file ```RUN_ME_eigenfunction.m``` computes ground states, i.e., positive solutions, on different domains. The file ```RUN_ME_second_eigenfunction.m``` computes second eigenfunctions on several symmetric domains. For the square, even higher eigenfunctions can be computed.
+The file ```RUN_ME_eigenfunction.m``` computes ground states, i.e., positive solutions, on different domains. 
+
+The file ```RUN_ME_second_eigenfunction.m``` computes second eigenfunctions on several symmetric domains. For the square, even higher eigenfunctions can be computed.
 
 The file ```RUN_ME_comparison.m``` gives a numerical confirmation of the recently proved statement (https://arxiv.org/abs/2210.03447) that the infinity harmonic potential on a square is no ground state.
