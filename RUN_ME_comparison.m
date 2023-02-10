@@ -2,7 +2,7 @@
 % infinity Laplacian operator on the unit square [-1 1]^2 for zero
 % boundary conditions.
 % @authors: Farid Bozorgnia, Leon Bungert, Daniel Tenbrinck
-% @date: 17/01/20
+% @date: 10/02/22
 
 % tidy up workspace
 clear all;

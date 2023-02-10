@@ -1,8 +1,7 @@
-% This code numerically computes the first Eigenfunction of the
-% infinity Laplacian operator on the unit square [-1 1]^2 for given
-% boundary conditions.
+% This code numerically computes second eigenfunctions, using the splitting
+% in positive and negative parts.
 % @authors: Farid Bozorgnia, Leon Bungert, Daniel Tenbrinck
-% @date: 17/01/20
+% @date: 10/02/22
 
 % tidy up workspace
 clear;
@@ -32,7 +31,7 @@ init = 'random';
 tic
 
 % initialize necessary parameters
-reg_accur       = 1e-07;
+TOL             = 1e-7; 
 max_iterations  = 2000;
 samples         = 50;       % has to be even!!!!
 stencil_shape   = 'full';   % valid stencils: full, square
@@ -103,8 +102,9 @@ values_neg = zeros(floor(neighborhood_size^2 /2)*neighborhood_size^2, numel(u));
 ustar = zeros(1,size(values_pos,2));
 
 % initialize stopping criterions
-rel_change = 1;
-iteration = 1;
+rel_change = inf;
+scheme_accuracy = inf;
+iteration = 0;
 
 % initialize containers
 rel_changes = zeros(1,max_iterations);
@@ -121,7 +121,7 @@ if normalization
     u = u_pos - u_neg;
 end
 
-while true %rel_change > reg_accur && iteration <= max_iterations
+while max(rel_change,0.) > TOL && iteration <= max_iterations  
         
     u_pos = max(u,0);
     u_neg = max(-u,0); 
@@ -239,8 +239,8 @@ while true %rel_change > reg_accur && iteration <= max_iterations
     end
     % compute relative change between two iterations
     diff = abs(u-unew).*mask;
-    rel_change = norm(diff, 'fro') / norm(unew.*mask, 'fro');
-    rel_changes(iteration) = rel_change;
+    rel_change = norm(diff, 'inf') / norm(unew.*mask, 'inf');
+%     scheme_accuracy = norm(scheme.*mask, 'inf');
         
     
     % update u

@@ -1,8 +1,7 @@
-% This code numerically computes the first Eigenfunction of the
-% infinity Laplacian operator on the unit square [-1 1]^2 for given
+% This code numerically computes the Aronsson function on the unit square [-1 1]^2 for given
 % boundary conditions.
 % @authors: Farid Bozorgnia, Daniel Tenbrinck
-% @date: 08/10/16
+% @date: 10/02/22
 
 % tidy up workspace
 clear; close all;

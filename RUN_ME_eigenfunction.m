@@ -2,7 +2,7 @@
 % infinity Laplacian operator on the unit square [-1 1]^2 for given
 % boundary conditions.
 % @authors: Farid Bozorgnia, Leon Bungert, Daniel Tenbrinck
-% @date: 17/01/20
+% @date: 10/01/22
 
 % tidy up workspace
 clear all;
@@ -334,7 +334,7 @@ while max(rel_change,scheme_accuracy) > TOL && iteration <= max_iterations
     solution = pad_u;
     scheme_exp = padarray(reshape(scheme.*mask, size(xinn)),[1,1]);
     
-    % compute stoppign criteria
+    % compute stopping criteria
     rel_change = norm(diff, 'inf') / norm(unew.*mask, 'inf');
     scheme_accuracy = norm(scheme.*mask, 'inf');
    

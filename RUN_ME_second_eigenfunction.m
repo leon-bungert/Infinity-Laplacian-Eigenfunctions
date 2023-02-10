@@ -1,64 +1,53 @@
-% This code numerically computes the first Eigenfunction of the
-% infinity Laplacian operator on the unit square [-1 1]^2 for given
-% boundary conditions.
+% This code numerically computes second eigenfunctions of the
+% infinity Laplacian operator on different symmetric domains. For the square, higher 
+% eigenfunctions can be computed, initializing with init = 'laplacian_2' or
+% init = 'laplacian_3', etc.
 % @authors: Farid Bozorgnia, Leon Bungert, Daniel Tenbrinck
-% @date: 17/01/20
+% @date: 10/02/22
 
 % tidy up workspace
-% clear;
+clear;
 close all;
 
 % define problem
 problem = 'higher_eigenfunction';
-% problem = 'infinity-harmonic';
 
 % define domain
-% shape = 'square';
-% shape = 'square-disk';
+shape = 'square';
 % shape = 'disk';
 % shape = 'ellipsis';
 % shape = 'L-shape';
-% shape = 'rectangle';
-shape = 'triangle';
-% shape = 'dumbell';
-% shape = 'two-disks';
-% shape = 'heart1';
-% shape = 'heart2';
+% shape = 'triangle';
 
 % define boundary conditions
 f = @(x,y) 0.*x.^0;
 
 % either enforce positive or negative peaks or do normalization
 % WARNING! Normalization is not guaranteed to produce correct solution
-high_ridge    = false;
-normalization = true;
+high_ridge    = true;
+normalization = false;
 
 % define initialization
-% init = 'zero';
-init = 'random';
+init = 'zero';
+% init = 'random';
 % init = 'distance';
-% init = 'laplacian_1';       % eigenvalues only for square!
+% init = 'laplacian_2';       % eigenvalues only for square!
 
 % start time measurement
 tic
 
 % initialize necessary parameters
-l               = 1;        % concave approximation parameter <= 1
+alpha           = 1;        % concave approximation parameter <= 1
 TOL             = 1e-07;
 max_iterations  = 3000;
-samples         = 2*48;       % has to be 2 times even!!!!
+samples         = 2*40;       % has to be 2 times even!!!!
 stencil_shape   = 'full';   % valid stencils: full, square
-neighborhood_size = 11;      % at least 3, higher stencil size yields instabilities
-save2disk       = true;     % save results to disk
+neighborhood_size = 9;      % at least 3, higher stencil size yields instabilities
+save2disk       = false;     % save results to disk
 visualize       = true;     % visualize the results
 savingFreq      = 10;       % saving frequency
 visFreq         = 10;       % visualization frequency
 
-% catch normalization in case of inf-harmonic problem
-if strcmpi(problem, 'infinity-harmonic')
-    high_ridge = true;
-    normalization = false;
-end
 
 % initialize grid on unit square [-1 1]^2 according to amount of sample
 % points
@@ -69,9 +58,6 @@ step_size = 2 / samples;
 switch shape
     case 'square'
         domain = @(x,y) max(abs(x),abs(y)) <= 1;          
-    case 'square-disk'
-        domain = @(x,y) (x.^2 + y.^2 < 1)|(x > 0);
-        closed_domain = @(x,y) (x.^2 + y.^2 <= 1)|(x >= 0);
     case 'disk'
         domain = @(x,y) x.^2 + y.^2 < 1;
         closed_domain = @(x,y) x.^2 + y.^2 <= 1;        
@@ -124,18 +110,16 @@ second_distance_function = double(bwdist(p < 0)) * step_size;
 second_dist_inner = second_distance_function(2:end-1, 2:end-1);
 [max_dist, ~] = max(second_dist_inner(:));
 
-% lambda = 1 / max_dist_first;
-% lambda = 1 / max_dist;
-lambda = 2.424366060834231;
-% lambda = 2;
+lambda = 1 / max_dist;
 
-max_idx = find(first_dist_inner == max_dist_first);
-% max_idx = find(second_dist_inner == max_dist);
+max_idx = find(second_dist_inner == max_dist);
 
 % set peak values in bottom left and top right corner
 max_idx_1 =  max_idx(1); max_idx_2 = max_idx(end);   % square
-% max_idx_1 = 2233; max_idx_2 = 6793;        % disk
-% max_idx_1 = max_idx(1:15); max_idx_2 = max_idx(28:end);           % L-shape
+
+if strcmp(shape,'L-shape')
+    max_idx_1 = max_idx(1:15); max_idx_2 = max_idx(28:end);           % L-shape
+end
 
 % initialization
 init_split = split(init, '_');
@@ -148,6 +132,8 @@ if length(init_split) > 1
                    4,...
                    nan,nan,nan,nan,nan,nan,6]/2;
     lambda = lambda_cont(num);
+    high_ridge = false;
+    normalization = false;
     if isnan(lambda)
         error('Laplacian eigenvalues only known for 1,2,3,4,11')
     end
@@ -166,7 +152,7 @@ switch type
         warning('on')
         warning('Initialization with Laplacian eigenfunctions only implemented on the square!')
         A = generateLaplaceOnSquare(samples , 'dirichlet');
-        [v, l] = eigs(A, num, 'smallestabs');
+        [v, ~] = eigs(A, num, 'smallestabs');
         phi = -reshape(v(:, num), size(x)-2);
         phi = max_dist * phi / max(abs(phi(:)));
         phi = padarray(phi, [1,1]);
@@ -220,11 +206,13 @@ end
 
 
 % initialize
+max_dist = 1;
+
 if high_ridge
     u(max_idx_1) = max_dist;
     u(max_idx_2) = -max_dist;
 end
-max_dist = 1;
+
 if normalization
     uneg = -min(u,0);
     upos = max(u,0);
@@ -280,41 +268,37 @@ while max(rel_change,scheme_accuracy) > TOL && iteration <= max_iterations
     end
     
     F2 = u - ustar;    
-    if strcmpi(problem, 'infinity-harmonic')
-        scheme = F2;
-    elseif strcmpi(problem, 'higher_eigenfunction') 
-        % upwind gradients with general stencil
-        slopes = ( u - patches' ) ./ distance;
-        [max_slopes, local_idx] = max(slopes, [], 2);
-        distances_max = distance(local_idx)';
-        [local_subs_i, local_subs_j] = ind2sub([neighborhood_size, neighborhood_size],local_idx);
-        [center_subs_i, center_subs_j] = ind2sub(size(xinn), 1:numel(u));
-        global_subs_i = center_subs_i' + local_subs_i - 1;
-        global_subs_j = center_subs_j' + local_subs_j - 1;
-        global_idx = sub2ind(size(xinn) + [2*radius 2*radius] , global_subs_i, global_subs_j);
-        
-        val_pos = pad_u(global_idx);
-        
-        F1p = ( (u - val_pos ) - lambda.*distances_max.*sign(u).*abs(u).^l ) ;
-        
-        % negative upwind gradients 
-        [min_slopes, local_idx] = min( slopes, [], 2);
-        min_slopes = reshape(min_slopes, size(u));
-        distances_min = distance(local_idx)';
-        [local_subs_i, local_subs_j] = ind2sub([neighborhood_size, neighborhood_size],local_idx);
-        [center_subs_i, center_subs_j] = ind2sub(size(xinn), 1:numel(u));
-        global_subs_i = center_subs_i' + local_subs_i - 1;
-        global_subs_j = center_subs_j' + local_subs_j - 1;
-        global_idx = sub2ind(size(xinn) + [2*radius 2*radius] , global_subs_i, global_subs_j);
-        
-        val_neg = pad_u(global_idx);
+    
+    % upwind gradients with general stencil
+    slopes = ( u - patches' ) ./ distance;
+    [max_slopes, local_idx] = max(slopes, [], 2);
+    distances_max = distance(local_idx)';
+    [local_subs_i, local_subs_j] = ind2sub([neighborhood_size, neighborhood_size],local_idx);
+    [center_subs_i, center_subs_j] = ind2sub(size(xinn), 1:numel(u));
+    global_subs_i = center_subs_i' + local_subs_i - 1;
+    global_subs_j = center_subs_j' + local_subs_j - 1;
+    global_idx = sub2ind(size(xinn) + [2*radius 2*radius] , global_subs_i, global_subs_j);
+    
+    val_pos = pad_u(global_idx);
+    
+    F1p = ( (u - val_pos ) - lambda.*distances_max.*sign(u).*abs(u).^alpha ) ;
+    
+    % negative upwind gradients 
+    [min_slopes, local_idx] = min( slopes, [], 2);
+    min_slopes = reshape(min_slopes, size(u));
+    distances_min = distance(local_idx)';
+    [local_subs_i, local_subs_j] = ind2sub([neighborhood_size, neighborhood_size],local_idx);
+    [center_subs_i, center_subs_j] = ind2sub(size(xinn), 1:numel(u));
+    global_subs_i = center_subs_i' + local_subs_i - 1;
+    global_subs_j = center_subs_j' + local_subs_j - 1;
+    global_idx = sub2ind(size(xinn) + [2*radius 2*radius] , global_subs_i, global_subs_j);
+    
+    val_neg = pad_u(global_idx);
 
-        F1n = ( (u - val_neg ) - lambda.*distances_min.*sign(u).*abs(u).^l ) ;
-                     
-        scheme = min( F1p , F2) + max( F1n , F2) - F2 ;
-    else
-        error('Unknown problem!')
-    end
+    F1n = ( (u - val_neg ) - lambda.*distances_min.*sign(u).*abs(u).^alpha ) ;
+                 
+    scheme = min( F1p , F2) + max( F1n , F2) - F2 ;
+    
            
     rho = 0.9;
     unew = (u - rho .* scheme);    
